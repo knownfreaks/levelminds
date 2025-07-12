@@ -27,11 +27,6 @@ const User = sequelize.define('User', {
   },
 });
 
-// Define Associations
-User.hasOne(StudentProfile, { foreignKey: 'userId', onDelete: 'CASCADE' });
-StudentProfile.belongsTo(User, { foreignKey: 'userId' });
 
-User.hasOne(SchoolProfile, { foreignKey: 'userId', onDelete: 'CASCADE' });
-SchoolProfile.belongsTo(User, { foreignKey: 'userId' });
 
 module.exports = User;

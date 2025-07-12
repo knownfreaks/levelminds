@@ -1,43 +1,29 @@
 const express = require('express');
-const router = express.Router();
-const auth = require('../middleware/auth');
+     const router = express.Router();
+     const auth = require('../middleware/auth');
 
-// Correctly import all functions in one line
-const { createJob, getAllJobs, applyForJob, getJobById, updateJob } = require('../controllers/jobController');
+     const { createJob, getAllJobs, applyForJob, getJobById, updateJob } = require('../controllers/jobController');
 
-// Middleware to check if user is a school
-const schoolOnly = (req, res, next) => {
-    if (req.user && req.user.role === 'school') {
-        next();
-    } else {
-        res.status(403).json({ msg: 'Access denied. Schools only.' });
-    }
-};
+     const studentOnly = (req, res, next) => {
+         if (req.user && req.user.role === 'student') {
+             next();
+         } else {
+             res.status(403).json({ msg: 'Access denied. Students only.' });
+         }
+     };
 
-// Middleware to check if user is a student
-const studentOnly = (req, res, next) => {
-    if (req.user && req.user.role === 'student') {
-        next();
-    } else {
-        res.status(403).json({ msg: 'Access denied. Students only.' });
-    }
-};
+     const schoolOnly = (req, res, next) => {
+         if (req.user && req.user.role === 'school') {
+             next();
+         } else {
+             res.status(403).json({ msg: 'Access denied. Schools only.' });
+         }
+     };
 
-// --- Job Routes ---
+     router.post('/', auth, schoolOnly, createJob);
+     router.get('/', auth, getAllJobs);
+     router.post('/:jobId/apply', auth, studentOnly, applyForJob);
+     router.get('/:id', auth, getJobById);
+     router.put('/:id', auth, schoolOnly, updateJob);
 
-// School route to create a job
-router.post('/', auth, schoolOnly, createJob);
-
-// School route to update a specific job
-router.put('/:id', auth, schoolOnly, updateJob);
-
-// Student route to get all open jobs
-router.get('/', auth, studentOnly, getAllJobs);
-
-// Student route to get a single job's details
-router.get('/:id', auth, studentOnly, getJobById);
-
-// Student route to apply for a job
-router.post('/:jobId/apply', auth, studentOnly, applyForJob);
-
-module.exports = router;
+     module.exports = router;

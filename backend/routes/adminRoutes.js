@@ -1,68 +1,79 @@
-    const express = require('express');
-    const router = express.Router();
-    const auth = require('../middleware/auth'); // Our security middleware
+const express = require('express');
+     const router = express.Router();
+     const auth = require('../middleware/auth');
+     const {
+       getAllUsers, updateUser, deleteUser,
+       createJobType, getJobTypes, updateJobType, deleteJobType,
+       createSubject, getSubjects, updateSubject, deleteSubject,
+       createState, getStates, updateState, deleteState,
+       createCity, getCitiesByState, updateCity, deleteCity,
+       createSkill, getSkills, updateSkill, deleteSkill, getSkillsByJobType,
+       createSubSkill, getSubSkills, updateSubSkill, deleteSubSkill, getSubSkillsBySkill,
+       getAdminDashboardMetrics,
+       getHelpTickets, updateHelpTicketStatus,
+       bulkUploadUsers, bulkUploadScores // Add bulk upload functions
+     } = require('../controllers/adminController');
 
-    // Import all the necessary controller functions, including the new user management ones
-    const {
-      createJobType, getJobTypes, updateJobType, deleteJobType,
-      createSubject, getSubjects,
-      createState, getStates,
-      createCity, getCitiesByState,
-      createSkill, getSkillsByJobType,
-      createSubSkill,
-      getAllUsers, // Existing
-      updateUser,  // NEW
-      deleteUser   // NEW
-    } = require('../controllers/adminController');
+     const adminOnly = (req, res, next) => {
+         if (req.user && req.user.role === 'admin') {
+             next();
+         } else {
+             res.status(403).json({ msg: 'Access denied. Admins only.' });
+         }
+     };
 
-    // Middleware to check if the user has the 'admin' role
-    const adminOnly = (req, res, next) => {
-        if (req.user && req.user.role === 'admin') {
-            next(); // If user is an admin, proceed to the next function
-        } else {
-            // If not an admin, send an error response
-            res.status(403).json({ msg: 'Access denied. Admins only.' });
-        }
-    };
+     // User Management
+     router.get('/users', auth, adminOnly, getAllUsers);
+     router.put('/users/:userId', auth, adminOnly, updateUser);
+     router.delete('/users/:userId', auth, adminOnly, deleteUser);
 
-    // --- Job Type Routes ---
-    router.post('/job-types', auth, adminOnly, createJobType);
-    router.get('/job-types', auth, getJobTypes);
-    router.put('/job-types/:id', auth, adminOnly, updateJobType);
-    router.delete('/job-types/:id', auth, adminOnly, deleteJobType);
+     // Job Type Management
+     router.post('/job-types', auth, adminOnly, createJobType);
+     router.get('/job-types', auth, getJobTypes);
+     router.put('/job-types/:id', auth, adminOnly, updateJobType);
+     router.delete('/job-types/:id', auth, adminOnly, deleteJobType);
 
-    // --- Subject Routes ---
-    router.post('/subjects', auth, adminOnly, createSubject);
-    router.get('/subjects', auth, getSubjects);
+     // Subject Management
+     router.post('/subjects', auth, adminOnly, createSubject);
+     router.get('/subjects', auth, getSubjects);
+     router.put('/subjects/:id', auth, adminOnly, updateSubject);
+     router.delete('/subjects/:id', auth, adminOnly, deleteSubject);
 
-    // --- State Routes ---
-    router.post('/states', auth, adminOnly, createState);
-    router.get('/states', auth, getStates);
+     // State Management
+     router.post('/states', auth, adminOnly, createState);
+     router.get('/states', auth, getStates);
+     router.put('/states/:id', auth, adminOnly, updateState);
+     router.delete('/states/:id', auth, adminOnly, deleteState);
 
-    // --- City Routes ---
-    router.post('/cities', auth, adminOnly, createCity);
-    router.get('/cities/by-state/:stateId', auth, getCitiesByState);
+     // City Management
+     router.post('/cities', auth, adminOnly, createCity);
+     router.get('/cities/by-state/:stateId', auth, getCitiesByState);
+     router.put('/cities/:id', auth, adminOnly, updateCity);
+     router.delete('/cities/:id', auth, adminOnly, deleteCity);
 
-    // --- Skill & Sub-skill Routes ---
-    router.post('/skills', auth, adminOnly, createSkill);
-    router.get('/skills/by-job-type/:jobTypeId', auth, getSkillsByJobType);
-    router.post('/sub-skills', auth, adminOnly, createSubSkill);
+     // Job-related Skill Management
+     router.post('/skills', auth, adminOnly, createSkill);
+     router.get('/skills', auth, getSkills);
+     router.get('/skills/by-job-type/:jobTypeId', auth, getSkillsByJobType);
+     router.put('/skills/:id', auth, adminOnly, updateSkill);
+     router.delete('/skills/:id', auth, adminOnly, deleteSkill);
 
-    // --- User Management Routes (Admin Only) ---
-    // @route   GET /api/admin/users
-    // @desc    Get all users (students, schools, admins)
-    // @access  Private (Admin only)
-    router.get('/users', auth, adminOnly, getAllUsers);
+     // Job-related Sub-skill Management
+     router.post('/sub-skills', auth, adminOnly, createSubSkill);
+     router.get('/sub-skills', auth, getSubSkills);
+     router.get('/sub-skills/by-skill/:skillId', auth, getSubSkillsBySkill);
+     router.put('/sub-skills/:id', auth, adminOnly, updateSubSkill);
+     router.delete('/sub-skills/:id', auth, adminOnly, deleteSubSkill);
 
-    // @route   PUT /api/admin/users/:userId
-    // @desc    Update a user's details or role
-    // @access  Private (Admin only)
-    router.put('/users/:userId', auth, adminOnly, updateUser);
+     // Admin Dashboard Metrics
+     router.get('/dashboard-metrics', auth, adminOnly, getAdminDashboardMetrics);
 
-    // @route   DELETE /api/admin/users/:userId
-    // @desc    Delete a user
-    // @access  Private (Admin only)
-    router.delete('/users/:userId', auth, adminOnly, deleteUser);
+     // Help Ticket Management
+     router.get('/help-tickets', auth, adminOnly, getHelpTickets);
+     router.put('/help-tickets/:ticketId', auth, adminOnly, updateHelpTicketStatus);
 
-    module.exports = router;
-    
+     // Bulk Operations (Placeholders)
+     router.post('/users/bulk-upload', auth, adminOnly, bulkUploadUsers);
+     router.post('/scores/bulk-upload', auth, adminOnly, bulkUploadScores);
+
+     module.exports = router;

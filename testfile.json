@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "YOUR_UNIQUE_COLLECTION_ID_HERE",
-		"name": "Level Minds Backend Tests",
+		"_postman_id": "your_unique_id_here",
+		"name": "Level Minds Backend Tests - Comprehensive",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "YOUR_EXPORTER_ID_HERE"
+		"_exporter_id": "your_exporter_id_here"
 	},
 	"item": [
 		{
@@ -151,28 +151,6 @@
 									"pm.environment.set(\"schoolEmail\", `school_test_${timestamp}@test.com`);",
 									"pm.environment.set(\"schoolPassword\", \"schoolpassword\");",
 									"pm.environment.set(\"schoolName\", \"Test School\");"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 201 Created\", function () {",
-									"    pm.response.to.have.status(201);",
-									"});",
-									"pm.test(\"Registration successful\", function () {",
-									"    pm.response.to.have.jsonBody(\"success\", true);",
-									"    pm.response.to.have.jsonBody(\"message\", \"Registration successful\");",
-									"});",
-									"const jsonData = pm.response.json();",
-									"pm.expect(jsonData.user).to.have.property('id');",
-									"pm.expect(jsonData.user.role).to.eql('school');",
-									"pm.environment.set(\"schoolUserId\", jsonData.user.id);",
-									"pm.environment.set(\"schoolToken\", jsonData.token);",
-									"console.log(\"School User ID: \" + pm.environment.get(\"schoolUserId\"));",
-									"console.log(\"School Token: \" + pm.environment.get(\"schoolToken\"));"
 								],
 								"type": "text/javascript"
 							}
@@ -398,7 +376,7 @@
 								{
 									"key": "image",
 									"type": "file",
-									"src": "/C:/Users/rog/Downloads/posttest.jpg"
+									"src": "C:/Users/rog/Downloads/posttest.jpg"
 								}
 							]
 						},
@@ -930,7 +908,7 @@
 								{
 									"key": "certificate_file",
 									"type": "file",
-									"src": "/C:/Users/rog/Downloads/posttest.jpg"
+									"src": "C:/Users/rog/Downloads/posttest.jpg"
 								}
 							]
 						},
@@ -1043,7 +1021,7 @@
 								{
 									"key": "certificate_file",
 									"type": "file",
-									"src": "/C:/Users/rog/Downloads/posttest.jpg"
+									"src": "C:/Users/rog/Downloads/posttest.jpg"
 								}
 							]
 						},

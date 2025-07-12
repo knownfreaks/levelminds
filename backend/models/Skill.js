@@ -1,21 +1,20 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const JobType = require('./JobType');
+     const sequelize = require('../config/db');
 
-const Skill = sequelize.define('Skill', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-}, { timestamps: false });
+     const Skill = sequelize.define('Skill', {
+       id: {
+         type: DataTypes.INTEGER,
+         primaryKey: true,
+         autoIncrement: true,
+         allowNull: false,
+       },
+       name: {
+         type: DataTypes.STRING(255),
+         allowNull: false,
+       },
+     }, {
+       tableName: 'Skills',
+       timestamps: true,
+     });
 
-// A Skill belongs to one JobType (Category)
-JobType.hasMany(Skill, { foreignKey: 'jobTypeId' });
-Skill.belongsTo(JobType, { foreignKey: 'jobTypeId' });
-
-module.exports = Skill;
+     module.exports = Skill;

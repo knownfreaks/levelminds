@@ -1,21 +1,20 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const State = require('./State');
+     const sequelize = require('../config/db');
 
-const City = sequelize.define('City', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-}, { timestamps: false });
+     const City = sequelize.define('City', {
+       id: {
+         type: DataTypes.INTEGER,
+         primaryKey: true,
+         autoIncrement: true,
+         allowNull: false,
+       },
+       name: {
+         type: DataTypes.STRING(255),
+         allowNull: false,
+       },
+     }, {
+       tableName: 'Cities',
+       timestamps: true,
+     });
 
-// Define Association
-State.hasMany(City, { foreignKey: 'stateId' });
-City.belongsTo(State, { foreignKey: 'stateId' });
-
-module.exports = City;
+     module.exports = City;

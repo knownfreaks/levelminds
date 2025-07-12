@@ -1,10 +1,10 @@
     const AssessmentSkillCategory = require('../models/AssessmentSkillCategory');
     const AssessmentSkill = require('../models/AssessmentSkill');
     const AssessmentSubSkill = require('../models/AssessmentSubSkill');
-    const StudentProfile = require('../models/StudentProfile'); // Import StudentProfile
-    const StudentSkillAssessment = require('../models/StudentSkillAssessment'); // Import new model
-    const StudentSubSkillScore = require('../models/StudentSubSkillScore'); // Import new model
-    const { sequelize } = require('sequelize'); // Import sequelize instance for transactions
+    const StudentProfile = require('../models/StudentProfile');
+    const StudentSkillAssessment = require('../models/StudentSkillAssessment');
+    const StudentSubSkillScore = require('../models/StudentSubSkillScore');
+    const sequelize = require('../config/db'); // Correct import for sequelize instance
 
     // --- Assessment Skill Category Controllers ---
 
@@ -228,29 +228,26 @@
       }
     };
 
-    // --- NEW: Student Core Skills Assessment Controllers (Admin Upload) ---
+    // --- Student Core Skills Assessment Controllers (Admin Upload) ---
 
     // @desc    Submit a student's core skill assessment scores
     // @route   POST /api/admin/students/:studentUserId/core-skills-assessment
     // @access  Private (Admin only)
     exports.submitStudentSkillAssessment = async (req, res) => {
-      const { assessmentSkillId, sub_skill_scores } = req.body; // sub_skill_scores is an array of { subSkillId, score }
-      const studentUserId = req.params.studentUserId; // This is the User ID, not StudentProfile ID
+      const { assessmentSkillId, sub_skill_scores } = req.body;
+      const studentUserId = req.params.studentUserId;
 
-      // Validate input
       if (!assessmentSkillId || !Array.isArray(sub_skill_scores) || sub_skill_scores.length !== 4) {
         return res.status(400).json({ msg: 'Invalid input. assessmentSkillId and exactly 4 sub_skill_scores are required.' });
       }
 
       try {
-        // Find the student's profile ID from their User ID
         const studentProfile = await StudentProfile.findOne({ where: { userId: studentUserId } });
         if (!studentProfile) {
           return res.status(404).json({ msg: 'Student profile not found for the given user ID.' });
         }
         const studentId = studentProfile.id;
 
-        // Verify the AssessmentSkill exists and get its associated sub-skills
         const assessmentSkill = await AssessmentSkill.findByPk(assessmentSkillId, {
           include: [{ model: AssessmentSubSkill, as: 'assessmentSubSkills' }]
         });
@@ -259,7 +256,6 @@
           return res.status(404).json({ msg: 'Assessment skill not found.' });
         }
 
-        // Validate that the provided sub_skill_scores match the expected sub-skills for this assessmentSkill
         const validSubSkillIds = assessmentSkill.assessmentSubSkills.map(s => s.id);
         let totalScore = 0;
         const subScoresToCreate = [];
@@ -275,24 +271,19 @@
           subScoresToCreate.push({ subSkillId: inputScore.subSkillId, score: inputScore.score });
         }
 
-        // Ensure exactly 4 sub-skills were provided and they are unique
         if (new Set(subScoresToCreate.map(s => s.subSkillId)).size !== 4) {
             return res.status(400).json({ msg: 'Exactly 4 unique sub-skill scores are required for this assessment skill.' });
         }
 
-
-        // Start a transaction to ensure atomicity
         const transaction = await sequelize.transaction();
 
         try {
-          // Create the main StudentSkillAssessment record
           const studentSkillAssessment = await StudentSkillAssessment.create({
             studentId,
             assessmentSkillId,
             total_score: totalScore,
           }, { transaction });
 
-          // Create the individual StudentSubSkillScore records
           for (const subScore of subScoresToCreate) {
             await StudentSubSkillScore.create({
               assessmentId: studentSkillAssessment.id,

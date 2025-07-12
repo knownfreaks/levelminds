@@ -1,37 +1,40 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const City = require('./City');
-const State = require('./State');
+     const sequelize = require('../config/db');
 
-const SchoolProfile = sequelize.define('SchoolProfile', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  school_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  logo_url: {
-    type: DataTypes.TEXT,
-  },
-  about: {
-    type: DataTypes.TEXT,
-  },
-  website: {
-    type: DataTypes.TEXT,
-  },
-  address: {
-    type: DataTypes.STRING,
-  },
-  pincode: {
-    type: DataTypes.STRING,
-  },
-});
+     const SchoolProfile = sequelize.define('SchoolProfile', {
+       id: {
+         type: DataTypes.INTEGER,
+         primaryKey: true,
+         autoIncrement: true,
+         allowNull: false,
+       },
+       school_name: {
+         type: DataTypes.STRING(255),
+         allowNull: false,
+       },
+       logo_url: {
+         type: DataTypes.TEXT,
+         allowNull: true,
+       },
+       about: {
+         type: DataTypes.TEXT,
+         allowNull: true,
+       },
+       website: {
+         type: DataTypes.TEXT,
+         allowNull: true,
+       },
+       address: {
+         type: DataTypes.STRING(255),
+         allowNull: true,
+       },
+       pincode: {
+         type: DataTypes.STRING(255),
+         allowNull: true,
+       },
+     }, {
+       tableName: 'SchoolProfiles',
+       timestamps: true,
+     });
 
-// Define Associations with State and City
-SchoolProfile.belongsTo(State, { foreignKey: 'stateId' });
-SchoolProfile.belongsTo(City, { foreignKey: 'cityId' });
-
-module.exports = SchoolProfile;
+     module.exports = SchoolProfile;
