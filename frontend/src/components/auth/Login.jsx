@@ -3,48 +3,33 @@ import login1 from "../../assets/login1.png";
 import logo from "../../assets/logo.png";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
-import api from "../../services/api"; // <-- We are importing our new api service
+import { useNavigate } from "react-router";
 
 const Login = () => {
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
   } = useForm();
 
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-
-  // This function now calls our backend API
-  const onSubmit = async (data) => {
-    try {
-      const response = await api.post("/auth/login", data);
-
-      // On successful login, save the token to local storage
-      localStorage.setItem('token', response.data.token);
-
-      // Navigate to the dashboard
+  const onSubmit = (data) => {
+    console.log("Login data:", data);
+    if (data) {
       navigate("/teacher/dashboard");
-
-    } catch (err) {
-      // Handle login errors from the backend
-      const errorMessage = err.response?.data?.msg || "Login failed. Please try again.";
-      setError("apiError", { type: "custom", message: errorMessage });
-      console.error("Login error:", errorMessage);
     }
   };
 
   return (
     <div className="w-full h-screen flex flex-col xl:flex-row">
-      {/* Left Panel */}
       <div className="hidden xl:flex relative w-[40%] h-full bg-black items-center">
         <img
           src={login1}
           alt="Welcome"
           className="absolute h-[80%] object-cover left-[100px] 2xl:left-[150px] z-10"
         />
+
         <div className="absolute bottom-20 left-[120px] pb-10 text-white z-20 max-w-xs">
           <h2 className="text-2xl font-bold mb-2">
             Welcome to <span className="text-green-500">LevelMinds</span>
@@ -62,6 +47,7 @@ const Login = () => {
       {/* Right Panel (Login Form) */}
       <div className="w-full xl:w-[60%] h-full flex items-center justify-center p-10 xl:pl-[100px]">
         <div className="w-full max-w-md">
+          {/* Logo and Heading */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-2">
               <img src={logo} alt="LevelMinds Logo" className="w-6 h-6" />
@@ -73,14 +59,8 @@ const Login = () => {
             </p>
           </div>
 
+          {/* Login Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-md">
-            {/* This block will display login errors from the backend */}
-            {errors.apiError && (
-                <p className="text-sm text-red-500 mb-4 text-center bg-red-100 p-2 rounded-md">
-                  {errors.apiError.message}
-                </p>
-            )}
-
             <div className="relative w-full mb-6">
               <input
                 type="email"
@@ -127,6 +107,7 @@ const Login = () => {
               >
                 Password
               </label>
+              {/* Eye Icon */}
               <div
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400"
