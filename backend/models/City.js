@@ -1,20 +1,20 @@
 const { DataTypes } = require('sequelize');
-     const sequelize = require('../config/db');
+const sequelize = require('../config/db');
 
-     const City = sequelize.define('City', {
-       id: {
-         type: DataTypes.INTEGER,
-         primaryKey: true,
-         autoIncrement: true,
-         allowNull: false,
-       },
-       name: {
-         type: DataTypes.STRING(255),
-         allowNull: false,
-       },
-     }, {
-       tableName: 'Cities',
-       timestamps: true,
-     });
+const City = sequelize.define('City', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+    allowNull: false,
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+}, {
+  tableName: 'Cities',
+  timestamps: true,
+});
 
-     module.exports = City;
+module.exports = City;

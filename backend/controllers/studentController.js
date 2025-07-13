@@ -1,233 +1,200 @@
-     const StudentProfile = require('../models/StudentProfile');
-     const User = require('../models/User');
-     const Interview = require('../models/Interview');
-     const JobApplication = require('../models/JobApplication');
-     const Job = require('../models/Job');
-     const SchoolProfile = require('../models/SchoolProfile');
-     const StudentSkillAssessment = require('../models/StudentSkillAssessment');
-     const AssessmentSkill = require('../models/AssessmentSkill');
-     const AssessmentSubSkill = require('../models/AssessmentSubSkill');
-     const StudentSubSkillScore = require('../models/StudentSubSkillScore');
-     const Helptkt = require('../models/Helptkt'); // <-- Import Helptkt model
-     const sequelize = require('../config/db');
-     const { sendEmail } = require('../services/emailService'); // Import email service
+const { StudentProfile, User, Interview, JobApplication, Job, SchoolProfile, StudentSkillAssessment, AssessmentSkill, AssessmentSubSkill, StudentSubSkillScore, Helptkt, Certificate, StudentPersonalSkill, Notification } = require('../models');
+const { createNotification } = require('../services/notificationService');
 
-     // @desc    Get the profile for the logged-in student
-     exports.getStudentProfile = async (req, res) => {
-       try {
-         const profile = await StudentProfile.findOne({
-           where: { userId: req.user.id },
-           include: [{ model: User, attributes: ['email'] }]
-         });
-         if (!profile) {
-           return res.status(404).json({ msg: 'Student profile not found' });
-         }
-         res.json(profile);
-       } catch (err) {
-         console.error(err.message);
-         res.status(500).send('Server Error');
-       }
-     };
+// @desc    Complete student onboarding
+// @route   PUT /api/students/onboarding
+// @access  Private (Student only)
+exports.completeOnboarding = async (req, res) => {
+    const { first_name, last_name, mobile, about, image_url, college_name, university_name, course_name, course_year, certifications, personalSkills } = req.body;
+    try {
+        const profile = await StudentProfile.findOne({ where: { userId: req.user.id } });
+        if (!profile) return res.status(404).json({ msg: 'Student profile not found' });
 
-     // @desc    Update the profile for the logged-in student
-     exports.updateStudentProfile = async (req, res) => {
-       const {
-         first_name,
-         last_name,
-         gender,
-         mobile,
-         about,
-         image_url,
-         college_name,
-         university_name,
-         course_name,
-         course_year
-       } = req.body;
-       try {
-         const profile = await StudentProfile.findOne({ where: { userId: req.user.id } });
-         if (!profile) {
-           return res.status(404).json({ msg: 'Student profile not found' });
-         }
-         profile.first_name = first_name || profile.first_name;
-         profile.last_name = last_name || profile.last_name;
-         profile.gender = gender || profile.gender;
-         profile.mobile = mobile || profile.mobile;
-         profile.about = about || profile.about;
-         profile.image_url = image_url || profile.image_url;
-         profile.college_name = college_name || profile.college_name;
-         profile.university_name = university_name || profile.university_name;
-         profile.course_name = course_name || profile.course_name;
-         profile.course_year = course_year || profile.course_year;
-         await profile.save();
-         res.json(profile);
-       } catch (err) {
-         console.error(err.message);
-         res.status(500).send('Server Error');
-       }
-     };
+        // Update profile fields
+        profile.first_name = first_name;
+        profile.last_name = last_name;
+        profile.mobile = mobile;
+        profile.about = about;
+        profile.image_url = image_url;
+        profile.college_name = college_name;
+        profile.university_name = university_name;
+        profile.course_name = course_name;
+        profile.course_year = course_year;
+        await profile.save();
 
-     // @desc    Get all scheduled interviews for the logged-in student
-     exports.getStudentSchedule = async (req, res) => {
-       try {
-         const studentProfile = await StudentProfile.findOne({ where: { userId: req.user.id } });
-         if (!studentProfile) {
-           return res.status(404).json({ msg: 'Student profile not found.' });
-         }
-         const interviews = await Interview.findAll({
-           include: [{
-             model: JobApplication,
-             where: { studentId: studentProfile.id },
-             include: [{
-               model: Job,
-               attributes: ['title'],
-               include: [{
-                 model: SchoolProfile,
-                 attributes: ['school_name']
-               }]
-             }]
-           }],
-           order: [['interview_date', 'ASC'], ['interview_time', 'ASC']]
-         });
-         res.json(interviews);
-       } catch (err) {
-         console.error(err.message);
-         res.status(500).send('Server Error');
-       }
-     };
+        // Handle certifications
+        if (certifications && certifications.length) {
+            await Certificate.destroy({ where: { studentId: profile.id } }); // Clear existing
+            const certsToCreate = certifications.map(c => ({ ...c, studentId: profile.id }));
+            await Certificate.bulkCreate(certsToCreate);
+        }
 
-     // @desc    Get all applications for the logged-in student
-     exports.getStudentApplications = async (req, res) => {
-       try {
-         const studentProfile = await StudentProfile.findOne({ where: { userId: req.user.id } });
-         if (!studentProfile) {
-           return res.status(404).json({ msg: 'Student profile not found.' });
-         }
-         const applications = await JobApplication.findAll({
-           where: { studentId: studentProfile.id },
-           include: [{
-             model: Job,
-             attributes: ['title'],
-             include: [{
-               model: SchoolProfile,
-               attributes: ['school_name']
-             }]
-           }],
-           order: [['updatedAt', 'DESC']]
-         });
-         res.json(applications);
-       } catch (err) {
-         console.error(err.message);
-         res.status(500).send('Server Error');
-       }
-     };
+        // Handle personal skills
+        if (personalSkills && personalSkills.length) {
+            await StudentPersonalSkill.destroy({ where: { studentId: profile.id } }); // Clear existing
+            const skillsToCreate = personalSkills.map(s => ({ skill_name: s, studentId: profile.id }));
+            await StudentPersonalSkill.bulkCreate(skillsToCreate);
+        }
 
-     // --- Get Student Core Skills Assessments ---
+        const user = await User.findByPk(req.user.id);
+        user.onboarded = true;
+        await user.save();
 
-     // @desc    Get a student's core skill assessment scores
-     // @route   GET /api/students/profile/core-skills-assessments
-     // @access  Private (Student only)
-     exports.getStudentCoreSkillsAssessments = async (req, res) => {
-       try {
-         const studentProfile = await StudentProfile.findOne({ where: { userId: req.user.id } });
-         if (!studentProfile) {
-           return res.status(404).json({ msg: 'Student profile not found.' });
-         }
+        res.json({ success: true, message: "Onboarding complete!", profile });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};
 
-         const assessments = await StudentSkillAssessment.findAll({
-           where: { studentId: studentProfile.id },
-           include: [
-             {
-               model: AssessmentSkill,
-               attributes: ['name', 'description'],
-               include: [
-                 {
-                   model: AssessmentSubSkill,
-                   as: 'assessmentSubSkills',
-                   attributes: ['id', 'name', 'max_score']
-                 }
-               ]
-             },
-             {
-               model: StudentSubSkillScore,
-               as: 'subSkillScores',
-               attributes: ['subSkillId', 'score']
-             }
-           ],
-           order: [[AssessmentSkill, 'name', 'ASC']]
-         });
 
-         const formattedAssessments = assessments.map(assessment => {
-           const skillData = assessment.AssessmentSkill;
-           const subScoresMap = {};
-           if (assessment.subSkillScores && Array.isArray(assessment.subSkillScores)) {
-             assessment.subSkillScores.forEach(s => {
-               subScoresMap[s.subSkillId] = s.score;
-             });
-           }
+// @desc    Get the profile for the logged-in student
+// @route   GET /api/students/profile
+// @access  Private (Student only)
+exports.getStudentProfile = async (req, res) => {
+  try {
+    const profile = await StudentProfile.findOne({
+      where: { userId: req.user.id },
+      include: [
+          { model: User, attributes: ['email'] },
+          { model: Certificate, as: 'certifications' },
+          { model: StudentPersonalSkill, as: 'personalSkills' },
+          {
+              model: StudentSkillAssessment,
+              as: 'skillAssessments',
+              include: [
+                  {
+                      model: AssessmentSkill,
+                      attributes: ['name'],
+                  },
+                  {
+                      model: StudentSubSkillScore,
+                      as: 'subSkillScores',
+                      include: [{ model: AssessmentSubSkill, attributes: ['name', 'max_score'] }]
+                  }
+              ]
+          }
+      ]
+    });
+    if (!profile) {
+      return res.status(404).json({ msg: 'Student profile not found' });
+    }
+    res.json(profile);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
 
-           const subSkillsWithScores = skillData.assessmentSubSkills.map(sub => ({
-             id: sub.id,
-             name: sub.name,
-             max_score: sub.max_score,
-             score: subScoresMap[sub.id] !== undefined ? subScoresMap[sub.id] : null
-           }));
+// @desc    Get all scheduled interviews for the logged-in student
+// @route   GET /api/students/schedule
+// @access  Private (Student only)
+exports.getStudentSchedule = async (req, res) => {
+  try {
+    const studentProfile = await StudentProfile.findOne({ where: { userId: req.user.id } });
+    if (!studentProfile) return res.status(404).json({ msg: 'Student profile not found.' });
 
-           return {
-             id: assessment.id,
-             skill_name: skillData.name,
-             skill_description: skillData.description,
-             total_score: assessment.total_score,
-             out_of: 40,
-             sub_skills: subSkillsWithScores,
-             createdAt: assessment.createdAt,
-             updatedAt: assessment.updatedAt
-           };
-         });
+    const interviews = await Interview.findAll({
+      include: [{
+        model: JobApplication,
+        where: { studentId: studentProfile.id },
+        include: [{
+          model: Job,
+          attributes: ['title'],
+          include: [{ model: SchoolProfile, attributes: ['school_name'] }]
+        }]
+      }],
+      order: [['interview_date', 'ASC'], ['start_time', 'ASC']]
+    });
+    res.json(interviews);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
 
-         res.json({ success: true, assessments: formattedAssessments });
+// @desc    Get all applications for the logged-in student
+// @route   GET /api/students/applications
+// @access  Private (Student only)
+exports.getStudentApplications = async (req, res) => {
+  try {
+    const studentProfile = await StudentProfile.findOne({ where: { userId: req.user.id } });
+    if (!studentProfile) return res.status(404).json({ msg: 'Student profile not found.' });
 
-       } catch (err) {
-         console.error(err.message);
-         res.status(500).send('Server Error');
-       }
-     };
+    const applications = await JobApplication.findAll({
+      where: { studentId: studentProfile.id },
+      include: [{
+        model: Job,
+        attributes: ['title'],
+        include: [{ model: SchoolProfile, attributes: ['school_name', 'logo_url'] }]
+      }],
+      order: [['updatedAt', 'DESC']]
+    });
+    res.json(applications);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
 
-     // @desc    Submit a help ticket
-     // @route   POST /api/students/help
-     // @access  Private (Student only)
-     exports.submitHelpTicket = async (req, res) => {
-       const { subject, description } = req.body;
+// @desc    Submit a help ticket
+// @route   POST /api/students/help
+// @access  Private (Student only)
+exports.submitHelpTicket = async (req, res) => {
+  const { subject, description } = req.body;
+  if (!subject || !description) {
+    return res.status(400).json({ success: false, message: 'Subject and description are required.' });
+  }
+  try {
+    const newTicket = await Helptkt.create({
+      userId: req.user.id,
+      subject,
+      description,
+      status: 'open'
+    });
 
-       if (!subject || !description) {
-         return res.status(400).json({ success: false, message: 'Subject and description are required.' });
-       }
+    // Notify all admins
+    const admins = await User.findAll({ where: { role: 'admin' } });
+    for (const admin of admins) {
+        await createNotification(admin.id, `New help ticket submitted: "${subject}"`, '/admin/help-tickets');
+    }
 
-       try {
-         const newTicket = await Helptkt.create({
-           userId: req.user.id,
-           subject,
-           description,
-           status: 'open'
-         });
+    res.status(201).json({ success: true, message: 'Help ticket submitted successfully', ticket: newTicket });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
 
-         // Optionally, send an email notification to admin
-         const adminUser = await User.findOne({ where: { role: 'admin' } });
-         if (adminUser && adminUser.email) {
-           const userEmail = req.user.email;
-           const emailHtml = `
-             <p>A new help ticket has been submitted by ${userEmail}.</p>
-             <p><strong>Subject:</strong> ${subject}</p>
-             <p><strong>Description:</strong> ${description}</p>
-             <p>Ticket ID: ${newTicket.id}</p>
-             <p>Please log in to the admin panel to view and manage this ticket.</p>
-           `;
-           await sendEmail(adminUser.email, `New Help Ticket: ${subject}`, emailHtml);
-         }
+// @desc    Get all notifications for the logged-in user
+// @route   GET /api/notifications
+// @access  Private
+exports.getNotifications = async (req, res) => {
+    try {
+        const notifications = await Notification.findAll({
+            where: { userId: req.user.id },
+            order: [['createdAt', 'DESC']],
+            limit: 20
+        });
+        res.json({ success: true, notifications });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};
 
-         res.status(201).json({ success: true, message: 'Help ticket submitted successfully', ticket: newTicket });
-       } catch (err) {
-         console.error(err.message);
-         res.status(500).send('Server Error');
-       }
-     };
-     
+// @desc    Mark notifications as read
+// @route   PUT /api/notifications/read
+// @access  Private
+exports.markNotificationsRead = async (req, res) => {
+    try {
+        await Notification.update(
+            { read: true },
+            { where: { userId: req.user.id, read: false } }
+        );
+        res.json({ success: true, message: 'Notifications marked as read.' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};

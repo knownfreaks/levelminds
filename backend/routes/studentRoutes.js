@@ -1,32 +1,30 @@
 const express = require('express');
-     const router = express.Router();
-     const auth = require('../middleware/auth');
+const router = express.Router();
+const auth = require('../middleware/auth');
 
-     const {
-       getStudentProfile,
-       updateStudentProfile,
-       getStudentSchedule,
-       getStudentApplications,
-       getStudentCoreSkillsAssessments,
-       submitHelpTicket
-     } = require('../controllers/studentController');
+const {
+  completeOnboarding,
+  getStudentProfile,
+  getStudentSchedule,
+  getStudentApplications,
+  submitHelpTicket,
+  getNotifications,
+  markNotificationsRead
+} = require('../controllers/studentController');
 
-     const studentOnly = (req, res, next) => {
-         if (req.user && req.user.role === 'student') {
-             next();
-         } else {
-             res.status(403).json({ msg: 'Access denied. Students only.' });
-         }
-     };
+const studentOnly = (req, res, next) => {
+    if (req.user && req.user.role === 'student') return next();
+    res.status(403).json({ msg: 'Access denied. Students only.' });
+};
 
-     router.route('/profile')
-       .get(auth, studentOnly, getStudentProfile)
-       .put(auth, studentOnly, updateStudentProfile);
+router.put('/onboarding', auth, studentOnly, completeOnboarding);
+router.get('/profile', auth, studentOnly, getStudentProfile);
+router.get('/schedule', auth, studentOnly, getStudentSchedule);
+router.get('/applications', auth, studentOnly, getStudentApplications);
+router.post('/help', auth, studentOnly, submitHelpTicket);
 
-     router.get('/schedule', auth, studentOnly, getStudentSchedule);
-     router.get('/applications', auth, studentOnly, getStudentApplications);
-     router.get('/profile/core-skills-assessments', auth, studentOnly, getStudentCoreSkillsAssessments);
+// Generic routes for any user
+router.get('/notifications', auth, getNotifications);
+router.put('/notifications/read', auth, markNotificationsRead);
 
-     router.post('/help', auth, studentOnly, submitHelpTicket);
-
-     module.exports = router;
+module.exports = router;

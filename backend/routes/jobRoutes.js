@@ -1,29 +1,22 @@
 const express = require('express');
-     const router = express.Router();
-     const auth = require('../middleware/auth');
+const router = express.Router();
+const auth = require('../middleware/auth');
 
-     const { createJob, getAllJobs, applyForJob, getJobById, updateJob } = require('../controllers/jobController');
+const { createJob, getAllJobsForStudent, applyForJob, getJobById } = require('../controllers/jobController');
 
-     const studentOnly = (req, res, next) => {
-         if (req.user && req.user.role === 'student') {
-             next();
-         } else {
-             res.status(403).json({ msg: 'Access denied. Students only.' });
-         }
-     };
+const studentOnly = (req, res, next) => {
+    if (req.user && req.user.role === 'student') return next();
+    res.status(403).json({ msg: 'Access denied. Students only.' });
+};
 
-     const schoolOnly = (req, res, next) => {
-         if (req.user && req.user.role === 'school') {
-             next();
-         } else {
-             res.status(403).json({ msg: 'Access denied. Schools only.' });
-         }
-     };
+const schoolOnly = (req, res, next) => {
+    if (req.user && req.user.role === 'school') return next();
+    res.status(403).json({ msg: 'Access denied. Schools only.' });
+};
 
-     router.post('/', auth, schoolOnly, createJob);
-     router.get('/', auth, getAllJobs);
-     router.post('/:jobId/apply', auth, studentOnly, applyForJob);
-     router.get('/:id', auth, getJobById);
-     router.put('/:id', auth, schoolOnly, updateJob);
+router.post('/', auth, schoolOnly, createJob);
+router.get('/', auth, studentOnly, getAllJobsForStudent);
+router.post('/:jobId/apply', auth, studentOnly, applyForJob);
+router.get('/:id', auth, getJobById); // Accessible by all logged-in users
 
-     module.exports = router;
+module.exports = router;

@@ -1,79 +1,74 @@
 const express = require('express');
-     const router = express.Router();
-     const auth = require('../middleware/auth');
-     const {
-       getAllUsers, updateUser, deleteUser,
-       createJobType, getJobTypes, updateJobType, deleteJobType,
-       createSubject, getSubjects, updateSubject, deleteSubject,
-       createState, getStates, updateState, deleteState,
-       createCity, getCitiesByState, updateCity, deleteCity,
-       createSkill, getSkills, updateSkill, deleteSkill, getSkillsByJobType,
-       createSubSkill, getSubSkills, updateSubSkill, deleteSubSkill, getSubSkillsBySkill,
-       getAdminDashboardMetrics,
-       getHelpTickets, updateHelpTicketStatus,
-       bulkUploadUsers, bulkUploadScores // Add bulk upload functions
-     } = require('../controllers/adminController');
+const router = express.Router();
+const auth = require('../middleware/auth');
+const {
+  createUser, getAllUsers, updateUser, deleteUser,
+  getAdminDashboardMetrics,
+  jobTypes, subjects, states, cities, getCitiesByState,
+  assessmentCategories, assessmentSkills, assessmentSubSkills,
+  getHelpTickets, updateHelpTicketStatus,
+  bulkUploadUsers, bulkUploadScores
+} = require('../controllers/adminController');
 
-     const adminOnly = (req, res, next) => {
-         if (req.user && req.user.role === 'admin') {
-             next();
-         } else {
-             res.status(403).json({ msg: 'Access denied. Admins only.' });
-         }
-     };
+const adminOnly = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        return next();
+    }
+    res.status(403).json({ msg: 'Access denied. Admins only.' });
+};
 
-     // User Management
-     router.get('/users', auth, adminOnly, getAllUsers);
-     router.put('/users/:userId', auth, adminOnly, updateUser);
-     router.delete('/users/:userId', auth, adminOnly, deleteUser);
+// User Management
+router.post('/users', auth, adminOnly, createUser);
+router.get('/users', auth, adminOnly, getAllUsers);
+router.put('/users/:userId', auth, adminOnly, updateUser);
+router.delete('/users/:userId', auth, adminOnly, deleteUser);
 
-     // Job Type Management
-     router.post('/job-types', auth, adminOnly, createJobType);
-     router.get('/job-types', auth, getJobTypes);
-     router.put('/job-types/:id', auth, adminOnly, updateJobType);
-     router.delete('/job-types/:id', auth, adminOnly, deleteJobType);
+// Dashboard
+router.get('/dashboard-metrics', auth, adminOnly, getAdminDashboardMetrics);
 
-     // Subject Management
-     router.post('/subjects', auth, adminOnly, createSubject);
-     router.get('/subjects', auth, getSubjects);
-     router.put('/subjects/:id', auth, adminOnly, updateSubject);
-     router.delete('/subjects/:id', auth, adminOnly, deleteSubject);
+// Master Data: Job Types, Subjects, States, Cities
+router.get('/job-types', auth, adminOnly, jobTypes.getAll);
+router.post('/job-types', auth, adminOnly, jobTypes.create);
+router.put('/job-types/:id', auth, adminOnly, jobTypes.update);
+router.delete('/job-types/:id', auth, adminOnly, jobTypes.delete);
 
-     // State Management
-     router.post('/states', auth, adminOnly, createState);
-     router.get('/states', auth, getStates);
-     router.put('/states/:id', auth, adminOnly, updateState);
-     router.delete('/states/:id', auth, adminOnly, deleteState);
+router.get('/subjects', auth, adminOnly, subjects.getAll);
+router.post('/subjects', auth, adminOnly, subjects.create);
+router.put('/subjects/:id', auth, adminOnly, subjects.update);
+router.delete('/subjects/:id', auth, adminOnly, subjects.delete);
 
-     // City Management
-     router.post('/cities', auth, adminOnly, createCity);
-     router.get('/cities/by-state/:stateId', auth, getCitiesByState);
-     router.put('/cities/:id', auth, adminOnly, updateCity);
-     router.delete('/cities/:id', auth, adminOnly, deleteCity);
+router.get('/states', auth, adminOnly, states.getAll);
+router.post('/states', auth, adminOnly, states.create);
+router.put('/states/:id', auth, adminOnly, states.update);
+router.delete('/states/:id', auth, adminOnly, states.delete);
 
-     // Job-related Skill Management
-     router.post('/skills', auth, adminOnly, createSkill);
-     router.get('/skills', auth, getSkills);
-     router.get('/skills/by-job-type/:jobTypeId', auth, getSkillsByJobType);
-     router.put('/skills/:id', auth, adminOnly, updateSkill);
-     router.delete('/skills/:id', auth, adminOnly, deleteSkill);
+router.get('/cities/by-state/:stateId', auth, adminOnly, getCitiesByState);
+router.post('/cities', auth, adminOnly, cities.create);
+router.put('/cities/:id', auth, adminOnly, cities.update);
+router.delete('/cities/:id', auth, adminOnly, cities.delete);
 
-     // Job-related Sub-skill Management
-     router.post('/sub-skills', auth, adminOnly, createSubSkill);
-     router.get('/sub-skills', auth, getSubSkills);
-     router.get('/sub-skills/by-skill/:skillId', auth, getSubSkillsBySkill);
-     router.put('/sub-skills/:id', auth, adminOnly, updateSubSkill);
-     router.delete('/sub-skills/:id', auth, adminOnly, deleteSubSkill);
+// Master Data: Assessment Skills
+router.get('/assessment-skill-categories', auth, adminOnly, assessmentCategories.getAll);
+router.post('/assessment-skill-categories', auth, adminOnly, assessmentCategories.create);
+router.put('/assessment-skill-categories/:id', auth, adminOnly, assessmentCategories.update);
+router.delete('/assessment-skill-categories/:id', auth, adminOnly, assessmentCategories.delete);
 
-     // Admin Dashboard Metrics
-     router.get('/dashboard-metrics', auth, adminOnly, getAdminDashboardMetrics);
+router.get('/assessment-skills', auth, adminOnly, assessmentSkills.getAll);
+router.post('/assessment-skills', auth, adminOnly, assessmentSkills.create);
+router.put('/assessment-skills/:id', auth, adminOnly, assessmentSkills.update);
+router.delete('/assessment-skills/:id', auth, adminOnly, assessmentSkills.delete);
 
-     // Help Ticket Management
-     router.get('/help-tickets', auth, adminOnly, getHelpTickets);
-     router.put('/help-tickets/:ticketId', auth, adminOnly, updateHelpTicketStatus);
+router.get('/assessment-sub-skills', auth, adminOnly, assessmentSubSkills.getAll);
+router.post('/assessment-sub-skills', auth, adminOnly, assessmentSubSkills.create);
+router.put('/assessment-sub-skills/:id', auth, adminOnly, assessmentSubSkills.update);
+router.delete('/assessment-sub-skills/:id', auth, adminOnly, assessmentSubSkills.delete);
 
-     // Bulk Operations (Placeholders)
-     router.post('/users/bulk-upload', auth, adminOnly, bulkUploadUsers);
-     router.post('/scores/bulk-upload', auth, adminOnly, bulkUploadScores);
+// Help Tickets
+router.get('/help-tickets', auth, adminOnly, getHelpTickets);
+router.put('/help-tickets/:ticketId', auth, adminOnly, updateHelpTicketStatus);
 
-     module.exports = router;
+// Bulk Uploads
+router.post('/users/bulk-upload', auth, adminOnly, bulkUploadUsers);
+router.post('/scores/bulk-upload', auth, adminOnly, bulkUploadScores);
+
+module.exports = router;

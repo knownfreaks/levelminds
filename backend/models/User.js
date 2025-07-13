@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
-const StudentProfile = require('./StudentProfile');
-const SchoolProfile = require('./SchoolProfile');
 
 const User = sequelize.define('User', {
   id: {
@@ -25,8 +23,10 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('student', 'school', 'admin'),
     allowNull: false,
   },
+  onboarded: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  }
 });
-
-
 
 module.exports = User;

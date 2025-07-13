@@ -1,18 +1,16 @@
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/navigation/Sidebar";
-import SearchBar from "../components/navigation/SearchBar";
+import MainSidebar from "@/components/shared/MainSidebar";
+import Header from "@/components/shared/Header";
 
 const MainLayout = () => {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <div className="flex flex-1 flex-col">
-        <div className="">
-          <SearchBar />
-        </div>
-        <div className="flex-1 overflow-y-auto p-3">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+      <MainSidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-4 sm:p-6">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );
